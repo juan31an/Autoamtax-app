@@ -1,0 +1,1551 @@
+!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Autoamtáx</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@0.292.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+
+<style>
+:root{--font:'Inter',system-ui,sans-serif}
+body{font-family:var(--font);background:#f1f5f9;margin:0}
+.top-nav{background:#fff7ed;border-radius:.75rem;box-shadow:0 3px 8px rgba(0,0,0,.05)}
+.top-link{padding:.6rem 1.2rem;border-radius:.5rem;font-weight:500;color:#334155;display:flex;align-items:center;gap:.4rem; transition: background-color 0.2s ease-in-out;}
+.top-link:hover{background:#fef3c7}.top-link.active{background:#fbbf24;color:#fff}
+section{background:#fff;border-radius:.75rem;box-shadow:0 3px 8px rgba(0,0,0,.05);padding:1.5rem 2rem;margin-bottom:2.5rem}
+.hide{display:none !important}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{padding:.55rem .9rem;border-bottom:1px solid #e2e8f0;font-size:.875rem;text-align:left;word-wrap:break-word}
+th{background:#f8fafc;font-weight:600;color:#334155}
+.btn{display:inline-flex;align-items:center;gap:.35rem;padding:.55rem 1rem;border-radius:.5rem;font-weight:500;cursor:pointer;transition:.15s ease-in-out; border: 1px solid transparent;}
+.btn:hover{filter:brightness(.95)}.btn:active{filter:brightness(.9);transform:scale(.97)}
+.btn-blue{background:#2563eb;color:#fff; border-color: #1d4ed8;}
+.btn-green{background:#16a34a;color:#fff; border-color: #15803d;}
+.btn-purple{background:#8b5cf6;color:#fff; border-color: #7c3aed;}
+.btn-red{background:#ef4444;color:#fff;padding:.35rem .75rem;font-size:.75rem; border-color: #dc2626;}
+.btn-amber{background:#f59e0b;color:#fff; border-color: #d97706;}
+.btn-gray {background:#f3f4f6;color:#374151;border:1px solid #d1d5db;}
+.btn-gray:hover {background:#e5e7eb;}
+
+
+input,select,textarea{width:100%;padding:.55rem .75rem;border:1px solid #d1d5db;border-radius:.5rem;min-height:42px; font-family: inherit;}
+input:focus,select:focus,textarea:focus{border-color:#3b82f6;outline:none;box-shadow:0 0 0 3px rgba(59,130,246,.3)}
+#toast-container{position:fixed;top:1.25rem;right:1.25rem;z-index:1050;display:flex;flex-direction:column;gap:.5rem}
+.toast-message{color:#fff;padding:.75rem 1.25rem;border-radius:.375rem;box-shadow:0 2px 10px rgba(0,0,0,.2);opacity:0;transform:translateX(100%);transition:.3s ease-in-out}
+.toast-message.show{opacity:1;transform:translateX(0)}.toast-message.error{background:#ef4444}.toast-message.success{background:#22c55e}
+#shiftSummary{background:#f3e8ff;border:1px solid #d8b4fe;padding:.75rem;border-radius:.5rem;margin-top:1rem;font-size:.875rem}
+#shiftSummary p { margin-bottom: 0.25rem; }
+#shiftSummary strong { font-weight: 600; color: #581c87;}
+
+#superAdminBadge{background:#d946ef}
+.salario-tipo{display:flex;gap:1.5rem;margin:.75rem 0}
+.salario-tipo label{display:flex;align-items:center;gap:.45rem;font-weight:500;color:#334155; cursor: pointer;}
+.salario-tipo input{appearance:none;width:22px;height:22px;border:2px solid #2563eb;border-radius:50%;position:relative; cursor: pointer;}
+.salario-tipo input:checked::after{content:'';position:absolute;inset:4px;background:#2563eb;border-radius:50%}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modal-content{background:#fff;border-radius:.75rem;box-shadow:0 10px 25px rgba(0,0,0,.2);width:90%;max-width:600px;max-height:90vh;overflow-y:auto}
+.modal-header{padding:1rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
+.modal-body{padding:1.5rem}
+.modal-footer{padding:1rem;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:.5rem}
+.modal-close{background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b}
+.card{background:#fff;border-radius:.5rem;box-shadow:0 2px 4px rgba(0,0,0,.1);overflow:hidden;transition:.2s}
+.card:hover{box-shadow:0 4px 8px rgba(0,0,0,.15)}
+.card-header{background:#f8fafc;padding:.75rem 1rem;border-bottom:1px solid #e2e8f0;font-weight:500}
+.card-body{padding:1rem}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:.5rem;padding:1rem;text-align:center}
+.stat-value{font-size:1.5rem;font-weight:600;color:#1e40af}
+.stat-label{font-size:.875rem;color:#64748b}
+.recent-list{max-height:300px;overflow-y:auto}
+.recent-item{padding:.75rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
+.recent-item:last-child{border-bottom:none}
+.admin-notice-tag {
+    font-weight: bold;
+    color: #7e22ce; /* purple-700 */
+    margin-right: 0.25rem;
+    background-color: #f3e8ff; /* purple-100 */
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+}
+#dailyShiftDetailsContainer { margin-top: 1.5rem; }
+#dailyShiftDetailsContainer h4 { color: #4b5563; /* slate-600 */}
+#dailyShiftDetails {
+    background-color: #f9fafb; /* gray-50 */
+    border: 1px solid #e5e7eb; /* gray-200 */
+    padding: 0.75rem; border-radius: 0.5rem; margin-top: 0.5rem; font-size: 0.875rem;
+}
+#dailyShiftDetails p { margin-bottom: 0.25rem; }
+#dailyShiftDetails strong { font-weight: 600; color: #1f2937; /* gray-800 */}
+
+#techHoursChartContainer {
+    max-width: 800px; 
+    margin: 2rem auto; 
+    padding:1rem;
+    background-color: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+.list-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+.list-item:last-child {
+    border-bottom: none;
+}
+.doblado-indicator {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.4rem;
+    background-color: #fef3c7; /* amber-100 */
+    color: #b45309; /* amber-700 */
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 0.25rem;
+}
+.solicitud-doblaje-indicator {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.4rem;
+    background-color: #ccfbf1; /* teal-100 */
+    color: #115e59; /* teal-700 */
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 0.25rem;
+}
+.pending-request-item {
+    background-color: #fef9c3; /* yellow-50 */
+    padding: 0.5rem;
+    border: 1px dashed #facc15; /* yellow-400 */
+    border-radius: 0.25rem;
+}
+.doblaje-details-input {
+    width: calc(50% - 0.5rem) !important; /* Para que quepan dos en una línea con gap */
+}
+</style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div id="login" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-lg shadow-xl">
+  <h1 class="text-2xl font-bold text-center mb-6 text-slate-700">Acceso Autoamtáx</h1>
+  <form id="loginForm" class="space-y-5" novalidate>
+    <input id="lAmb" placeholder="Código ambulancia" required class="text-base">
+    <input id="lTec" placeholder="Código trabajador" required class="text-base">
+    <button class="btn btn-blue w-full text-base py-3">Entrar</button>
+  </form>
+</div>
+
+<div id="app" class="hide max-w-7xl mx-auto p-6">
+  <div class="mb-8">
+    <div class="flex justify-between items-center gap-4 flex-wrap">
+      <h2 class="text-3xl font-bold text-slate-800">Panel Autoamtáx</h2>
+      <div class="space-x-2 flex items-center">
+        <span id="lblUser" class="text-sm font-medium text-slate-600"></span>
+        <span id="adminBadge" class="hide text-xs font-semibold bg-purple-500 text-white px-2 py-0.5 rounded">ADMIN</span>
+        <span id="superAdminBadge" class="hide text-xs font-semibold text-white px-2 py-0.5 rounded">SUPERADMIN</span>
+        <button id="btnLogout" class="btn btn-red text-sm">Salir</button>
+      </div>
+    </div>
+
+    <nav class="top-nav mt-6 flex gap-1 px-2 py-2 sticky top-4 backdrop-blur-sm flex-wrap z-50">
+      <a href="#" class="top-link active" data-sec="horas"><i data-lucide="clock" class="w-5 h-5"></i>Horas</a>
+      <a href="#" class="top-link" data-sec="salario"><i data-lucide="euro" class="w-5 h-5"></i>Salario</a>
+      <a href="#" class="top-link" data-sec="notices"><i data-lucide="megaphone" class="w-5 h-5"></i>Avisos</a>
+      <a href="#" class="top-link" data-sec="dashboard"><i data-lucide="layout-dashboard" class="w-5 h-5"></i>Resumen</a>
+      <a href="#" class="top-link hide" data-sec="doblajes" id="linkDoblajes"><i data-lucide="calendar-plus" class="w-5 h-5"></i>Doblajes</a>
+      <a href="#" class="top-link hide" data-sec="admin" id="linkAdmin"><i data-lucide="shield" class="w-5 h-5"></i>Admin</a>
+      <a href="https://chat.whatsapp.com/ENLACE_GRUPO_WHATSAPP" target="_blank" class="top-link"><i data-lucide="message-square" class="w-5 h-5"></i>WhatsApp</a>
+    </nav>
+  </div>
+
+  <section id="sec-horas">
+    <h3 class="text-2xl font-semibold text-blue-800 mb-4">Registro de Turnos</h3>
+
+    <div id="adminSelBox" class="hide mb-6 p-4 bg-purple-50 border border-purple-300 rounded">
+      <label class="block mb-2 font-medium text-purple-700" for="adminSelTec">Ver turnos del Técnico:</label>
+      <select id="adminSelTec" class="w-full md:w-1/2 p-2 border border-gray-300 rounded"></select>
+    </div>
+
+    <form id="shiftForm" class="grid gap-5 md:grid-cols-3 mb-4" novalidate>
+      <input id="sIni" type="datetime-local" required>
+      <input id="sFin" type="datetime-local" required>
+      <input id="sKm" type="number" step="0.1" min="0" placeholder="Km recorridos" required>
+    </form>
+    <button id="btnSaveShift" class="btn btn-blue mb-6">➕ Guardar mi turno</button>
+
+    <div id="informarDoblajeContainer" class="hide mb-6 p-4 bg-amber-50 border border-amber-300 rounded">
+        <h4 class="text-lg font-medium text-amber-700 mb-2">Informar Día Doblado</h4>
+        <p class="text-sm text-amber-600 mb-2">Si has doblado un día y no está reflejado, puedes informarlo aquí para que el administrador lo revise.</p>
+        <div class="grid md:grid-cols-2 gap-3 items-end">
+            <div>
+                <label class="block text-sm font-medium mb-1" for="informarDoblajeDate">Fecha del doblaje:</label>
+                <input type="date" id="informarDoblajeDate" class="w-full p-2 border border-gray-300 rounded">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1" for="informarDoblajeHours">Horas Dobladas (ej: 8.5):</label>
+                <input type="number" id="informarDoblajeHours" step="0.1" min="0" placeholder="Horas" class="w-full p-2 border border-gray-300 rounded">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1" for="informarDoblajeKm">Km Doblados:</label>
+                <input type="number" id="informarDoblajeKm" step="0.1" min="0" placeholder="Km" class="w-full p-2 border border-gray-300 rounded">
+            </div>
+            <button id="btnInformarDoblaje" class="btn btn-amber whitespace-nowrap md:mt-6">Informar Doblaje</button>
+        </div>
+    </div>
+
+
+    <div class="flex flex-wrap gap-4 mb-4 items-center">
+        <div>
+            <label for="selAno" class="text-sm font-medium">Año:</label>
+            <select id="selAno" class="mt-1 p-2 border border-gray-300 rounded"></select>
+        </div>
+        <div>
+            <label for="selMes" class="text-sm font-medium">Mes:</label>
+            <select id="selMes" class="mt-1 p-2 border border-gray-300 rounded"></select>
+        </div>
+    </div>
+    
+    <div id="workedDaysSelectorContainer" class="mb-4 hide">
+        <label for="selDiaTrabajado" class="text-sm font-medium">Día trabajado:</label>
+        <select id="selDiaTrabajado" class="w-full md:w-1/2 p-2 border border-gray-300 rounded mt-1"></select>
+    </div>
+
+    <div id="shiftSummary" class="hide">
+        <p>Resumen del mes para <strong id="summaryUser"></strong>:</p>
+        <p>Horas Normales: <strong id="summaryHoursNormal">0h 0m</strong></p>
+        <p>Km Normales: <strong id="summaryKmNormal">0 km</strong></p>
+        <p>Horas Dobladas: <strong id="summaryHoursDobladas">0h 0m</strong></p>
+        <p>Km Doblados: <strong id="summaryKmDoblados">0 km</strong></p>
+        <hr class="my-1 border-purple-300">
+        <p><strong>TOTAL Horas: <strong id="summaryHoursTotal">0h 0m</strong></strong></p>
+        <p><strong>TOTAL Kilómetros: <strong id="summaryKmTotal">0 km</strong></strong></p>
+    </div>
+
+    <div id="dailyShiftDetailsContainer" class="mt-4 hide">
+        <h4 class="text-md font-semibold text-slate-700 mb-2">Detalle del Día Seleccionado:</h4>
+        <div id="dailyShiftDetails" class="space-y-1 text-sm bg-slate-50 p-3 rounded-md border">
+            </div>
+    </div>
+    <button id="btnExportMonth" class="btn btn-gray mt-6">⬇ Exportar datos del mes visualizado</button>
+  </section>
+
+  <section id="sec-salario" class="hide">
+    <h3 class="text-2xl font-semibold text-blue-800 mb-2">Calculadora de salario</h3>
+
+    <div class="salario-tipo mb-4">
+      <label><input type="radio" name="tipoSal" value="aut" checked> Autónomo</label>
+      <label><input type="radio" name="tipoSal" value="trab"> Trabajador</label>
+    </div>
+
+    <div id="boxAut">
+      <p class="mb-4 text-sm text-slate-600">14,20 €/h · 11,50 €/h extra · límite 189 h · IRPF – 774 €</p>
+      <div class="grid gap-4 md:grid-cols-3 items-end mb-6">
+        <input id="hoursAut" type="number" min="0" step="0.1" placeholder="Horas mes">
+        <button id="btnCalcAut" class="btn btn-green">Calcular</button>
+      </div>
+    </div>
+
+    <div id="boxTrab" class="hide">
+      <div class="grid gap-4 md:grid-cols-3 mb-4">
+        <input id="hoursTrab" type="number" min="0" step="0.1" placeholder="Horas mes">
+        <input id="limTrab"   type="number" min="0" step="1"   placeholder="Límite horas normales">
+        <input id="irpfTrab"  type="number" min="0" step="1"   placeholder="IRPF €">
+      </div>
+      <div class="grid gap-4 md:grid-cols-3 items-end mb-6">
+        <input id="rateNormTrab"  type="number" min="0" step="0.01" placeholder="€/h normal">
+        <input id="rateExtraTrab" type="number" min="0" step="0.01" placeholder="€/h extra">
+        <button id="btnCalcTrab" class="btn btn-green">Calcular</button>
+      </div>
+    </div>
+
+    <div id="salaryResult" class="hide border rounded p-4 bg-amber-50"></div>
+  </section>
+
+  <section id="sec-notices" class="hide">
+    <h3 class="text-2xl font-semibold text-blue-800">Avisos / Noticias</h3>
+
+    <form id="noticeForm" class="grid gap-4 mt-6 mb-4" novalidate> <input id="nTitle" placeholder="Título" required>
+      <textarea id="nContent" rows="3" placeholder="Contenido..." required></textarea>
+      <input id="nFile" type="file" accept=".pdf,image/*,application/msword">
+      <button id="btnAddNotice" type="button" class="btn btn-purple w-max">➕ Publicar</button>
+    </form>
+
+    <div class="overflow-x-auto border rounded">
+      <table><thead><tr><th>Fecha</th><th>Título</th><th>Contenido</th><th>Adjunto / Acción</th></tr></thead>
+      <tbody id="noticeTable"></tbody></table>
+    </div>
+  </section>
+
+  <section id="sec-dashboard" class="hide">
+    <h3 class="text-2xl font-semibold text-blue-800 mb-4">Resumen (Mis Datos)</h3>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value" id="dashTotalHours">0h</div><div class="stat-label">Horas totales (Normales + Dobladas)</div></div>
+      <div class="stat-card"><div class="stat-value" id="dashTotalKm">0</div><div class="stat-label">Kilómetros totales (Normales + Doblados)</div></div>
+      <div class="stat-card"><div class="stat-value" id="dashTotalShifts">0</div><div class="stat-label">Turnos regulares</div></div>
+      <div class="stat-card"><div class="stat-value" id="dashTotalDoblajes">0</div><div class="stat-label">Días Doblados (Oficial)</div></div>
+    </div>
+
+    <h4 class="text-xl font-semibold text-blue-600 mb-3">Actividad reciente (Mis Turnos Regulares)</h4>
+    <div class="card">
+      <div class="card-header">Últimos turnos registrados</div>
+      <div class="card-body p-0">
+        <div class="recent-list" id="recentActivity">
+          <div class="recent-item"><span>Cargando actividad reciente...</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <section id="sec-doblajes" class="hide">
+    <h3 class="text-2xl font-semibold text-blue-800 mb-6">Gestión de Días Doblados</h3>
+    
+    <div class="grid md:grid-cols-2 gap-8">
+        <div>
+            <h4 class="text-xl font-semibold text-purple-700 mb-3">Marcar/Gestionar Días Doblados Oficialmente</h4>
+            <div class="mb-4 p-4 bg-purple-50 border border-purple-300 rounded">
+                <label class="block mb-2 font-medium text-purple-700" for="doblajesSelTec">Seleccionar Técnico:</label>
+                <select id="doblajesSelTec" class="w-full p-2 border border-gray-300 rounded mb-3"></select>
+                
+                <label class="block mb-2 font-medium text-purple-700" for="doblajeDateAdmin">Fecha del Doblaje:</label>
+                <input type="date" id="doblajeDateAdmin" class="w-full p-2 border border-gray-300 rounded mb-3">
+                
+                <div class="flex gap-3 mb-3">
+                    <div>
+                        <label class="block text-xs font-medium text-purple-700" for="doblajeHoursAdmin">Horas Dobladas:</label>
+                        <input type="number" id="doblajeHoursAdmin" step="0.1" min="0" placeholder="Horas" class="doblaje-details-input p-2 border rounded">
+                    </div>
+                     <div>
+                        <label class="block text-xs font-medium text-purple-700" for="doblajeKmAdmin">Km Doblados:</label>
+                        <input type="number" id="doblajeKmAdmin" step="0.1" min="0" placeholder="Km" class="doblaje-details-input p-2 border rounded">
+                    </div>
+                </div>
+                <button id="btnToggleDoblajeAdmin" class="btn btn-green w-full">Guardar/Actualizar Día Doblado</button>
+                <button id="btnRemoveDoblajeAdmin" class="btn btn-red w-full mt-2">Quitar Marca de Doblado</button>
+            </div>
+
+            <h4 class="text-lg font-semibold text-slate-700 mt-6 mb-2">Días Doblados Oficialmente (Técnico Seleccionado):</h4>
+            <div id="doblajesListTecnicoAdmin" class="max-h-60 overflow-y-auto border rounded p-3 bg-slate-50 mb-6">
+                <p>Seleccione un técnico.</p>
+            </div>
+
+            <h4 class="text-lg font-semibold text-amber-700 mt-6 mb-2">Solicitudes de Doblaje Pendientes (Técnico Seleccionado):</h4>
+            <div id="doblajesSolicitudesPendientes" class="max-h-60 overflow-y-auto border rounded p-3 bg-amber-50">
+                <p>Seleccione un técnico.</p>
+            </div>
+        </div>
+
+        <div>
+            <h4 class="text-xl font-semibold text-slate-700 mb-3">Resumen de Días Doblados Oficialmente (Todos los Técnicos)</h4>
+            <div class="max-h-96 overflow-y-auto border rounded">
+                <table>
+                    <thead><tr><th>Técnico</th><th>Ambulancia</th><th>Días Doblados</th><th>Horas Dobladas</th><th>Km Doblados</th></tr></thead>
+                    <tbody id="doblajesResumenTodos">
+                        <tr><td colspan="5" class="text-center py-3">Cargando resumen...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </section>
+
+
+  <section id="sec-admin" class="hide">
+    <h3 class="text-2xl font-semibold text-blue-800 mb-4">Panel de Administración</h3>
+    
+    <div class="card mb-6">
+      <div class="card-header">Registro de accesos (Últimos 50)</div>
+      <div class="card-body p-0">
+        <div class="max-h-96 overflow-y-auto">
+            <table><thead><tr><th>Fecha</th><th>Ambulancia</th><th>Técnico</th><th>Rol</th></tr></thead><tbody id="accessLog"></tbody></table>
+        </div>
+      </div>
+    </div>
+    
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="card">
+        <div class="card-header">Resumen de horas por técnico (Todos los meses)</div>
+        <div class="card-body p-0">
+          <div class="max-h-96 overflow-y-auto">
+            <table>
+              <thead><tr><th>Técnico</th><th>Ambulancia</th><th>H.Normal</th><th>Km.Norm</th><th>H.Dobl.</th><th>Km.Dobl.</th><th>H.Total</th><th>Km.Total</th><th>Acción</th></tr></thead>
+              <tbody id="techSummary"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Gestión de parámetros (Salario Autónomo)</div>
+        <div class="card-body">
+          <form id="paramForm" class="space-y-4">
+            <div><label class="block text-sm mb-1">Tarifa hora normal (€)</label><input id="paramRate" type="number" min="0" step="0.01"></div>
+            <div><label class="block text-sm mb-1">Tarifa hora extra (€)</label><input id="paramRateExtra" type="number" min="0" step="0.01"></div>
+            <div><label class="block text-sm mb-1">Límite horas normales</label><input id="paramLimit" type="number" min="0" step="1"></div>
+            <div><label class="block text-sm mb-1">IRPF base (€)</label><input id="paramIRPF" type="number" min="0" step="1"></div>
+            <button type="button" id="btnSaveParams" class="btn btn-green">Guardar parámetros</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div id="techHoursChartContainer" class="mt-8">
+        <canvas id="techHoursChart"></canvas>
+    </div>
+  </section>
+</div>
+
+<div id="userShiftModal" class="modal hide">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h4 class="text-lg font-semibold" id="modalTitle">Detalle de turnos</h4>
+      <button class="modal-close" id="closeModal">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <div class="flex gap-4 mb-4 items-center">
+        <label for="modalSelAno" class="text-sm font-medium">Año:</label><select id="modalSelAno" class="p-1 border rounded"></select>
+        <label for="modalSelMes" class="text-sm font-medium ml-2">Mes:</label><select id="modalSelMes" class="p-1 border rounded"></select>
+      </div>
+      <div id="modalShiftSummary" class="mb-4 p-3 bg-blue-50 rounded">
+        <p><strong id="modalSumHours">0h 0m</strong> · <strong id="modalSumKm">0 km</strong> (Total Mes)</p>
+      </div>
+      <div class="max-h-60 overflow-y-auto">
+        <table>
+          <thead><tr><th>INI</th><th>Fin</th><th>Km</th><th>Duración</th></tr></thead>
+          <tbody id="modalShiftTable"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-amber" id="btnExportModalShifts">Exportar Mes</button>
+      <button class="btn btn-blue" id="closeModalBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* UTILIDADES -------------------------------------------------------- */
+const $=(s,p=document)=>p.querySelector(s),$$=(s,p=document)=>p.querySelectorAll(s);
+const LS=k=>JSON.parse(localStorage.getItem(k)||'null'),SS=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const fmt=(d,o)=>new Date(d).toLocaleString('es-ES',o);
+const dur=(a,b,returnMinutes=false)=>{
+    const diffMs = new Date(b) - new Date(a);
+    if (isNaN(diffMs) || diffMs < 0) return returnMinutes ? 0 : '0h 0m';
+    const m=Math.floor(diffMs/60000);
+    if(returnMinutes) return m;
+    return`${~~(m/60)}h ${m%60}m`
+};
+const formatMinutesToHoursString = (totalMinutes) => {
+    if (isNaN(totalMinutes) || totalMinutes < 0) return '0h 0m';
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+};
+const toast=(m,t='info',d=3000)=>{const n=document.createElement('div');n.className=`toast-message ${t}`;n.textContent=m;
+ $('#toast-container').append(n);setTimeout(()=>n.classList.add('show'),10);
+ setTimeout(()=>{n.classList.remove('show');setTimeout(()=>n.remove(),300)},d)};
+const safeIcons=()=>{if(window.lucide)lucide.createIcons();};
+const MONTH_NAMES_FULL = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+/* ESTADO ------------------------------------------------------------ */
+let amb='',tec='',isAdmin=false,isSuper=false;
+let adminViewingAmb = '', adminViewingTec = ''; 
+let currentModalAmb = '', currentModalTec = '';
+const systemParams={rateNormal:14.2,rateExtra:11.5,hoursLimit:189,irpfBase:774};
+const G = {
+    logs: LS('access_log') || [],
+    notices: LS('autoNotices_v2') || []
+};
+console.log("[DEBUG][INICIO APP] G.notices cargado de localStorage ('autoNotices_v2'):", JSON.parse(JSON.stringify(G.notices)));
+let techHoursChartInstance = null;
+
+
+/* LOGIN ------------------------------------------------------------- */
+$('#loginForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  amb=$('#lAmb').value.trim().toUpperCase();
+  tec=$('#lTec').value.trim().toUpperCase();
+  if(!amb||!tec)return toast('Completa los campos','error');
+  isSuper=amb==='ADMIN'&&tec==='ADMIN';
+  isAdmin=isSuper||(tec==='TEC000' && amb !== 'ADMIN');
+
+  console.log(`[DEBUG][LOGIN] ambId=${amb}, trbId=${tec}, isAdmin=${isAdmin}, isSuperAdmin=${isSuper}`);
+
+  $('#lblUser').textContent=`${amb} · ${tec}`;
+  $('#adminBadge').classList.toggle('hide',!isAdmin);
+  $('#superAdminBadge').classList.toggle('hide',!isSuper);
+  $('#linkAdmin').classList.toggle('hide',!(isAdmin||isSuper));
+  $('#linkDoblajes').classList.toggle('hide',!(isAdmin||isSuper));
+  $('#informarDoblajeContainer').classList.toggle('hide', isAdmin || isSuper);
+
+
+  $('#login').classList.add('hide');$('#app').classList.remove('hide');safeIcons();
+  G.logs.push({date:new Date().toISOString(),amb,tec, isAdmin, isSuper});SS('access_log',G.logs);
+
+  adminViewingAmb = amb; 
+  adminViewingTec = tec;
+
+  initHoras(); 
+  renderNotices(); 
+  loadParams();
+  updateDashboard();
+  if(isAdmin||isSuper) updateAdminPanel();
+  if(isAdmin||isSuper) initDoblajes();
+  
+  toast(`Bienvenido ${tec}${isSuper ? ' (SuperAdmin)' : isAdmin ? ' (Admin)' : ''}`, 'success');
+});
+$('#btnLogout').onclick=()=>location.reload();
+
+/* NAVEGACIÓN -------------------------------------------------------- */
+$$('.top-link').forEach(l=>l.addEventListener('click',e=>{
+  if(!l.dataset.sec)return;
+  e.preventDefault();
+  $$('.top-link').forEach(a=>a.classList.remove('active'));l.classList.add('active');
+  $$('section').forEach(s=>s.classList.add('hide'));$('#sec-'+l.dataset.sec).classList.remove('hide');
+  
+  console.log(`[DEBUG][NAV] Navegando a sección: ${l.dataset.sec}`);
+  if(l.dataset.sec==='horas') initHoras();
+  if(l.dataset.sec==='notices') renderNotices();
+  if(l.dataset.sec==='dashboard') updateDashboard();
+  if(l.dataset.sec==='salario') precargarTrabajador();
+  if(l.dataset.sec==='admin'&&(isAdmin||isSuper)) updateAdminPanel();
+  if(l.dataset.sec==='doblajes'&&(isAdmin||isSuper)) initDoblajes();
+  safeIcons();
+}));
+
+/* ----------------------------- HORAS ------------------------------ */
+function initHoras(){
+    console.log("[DEBUG][INIT HORAS] Iniciando sección de horas.");
+    populateYearMonthSelectors_Horas();
+    if(isAdmin || isSuper) {
+        $('#adminSelBox').classList.remove('hide');
+        populateTechnicianSelector_Horas();
+    } else {
+        $('#adminSelBox').classList.add('hide');
+        adminViewingAmb = amb; 
+        adminViewingTec = tec;
+        actualizarVistaHoras();
+    }
+}
+
+function populateYearMonthSelectors_Horas() {
+    const selAno = $('#selAno');
+    const selMes = $('#selMes');
+    const currentYear = new Date().getFullYear();
+    const currentMonthIndex = new Date().getMonth();
+
+    selAno.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+        const year = currentYear - i;
+        selAno.add(new Option(year, year));
+    }
+    selAno.value = currentYear;
+
+    selMes.innerHTML = '';
+    MONTH_NAMES_FULL.forEach((name, index) => {
+        selMes.add(new Option(name, index));
+    });
+    selMes.value = currentMonthIndex;
+
+    selAno.onchange = actualizarVistaHoras;
+    selMes.onchange = actualizarVistaHoras;
+    console.log("[DEBUG][POPULATE YEAR/MONTH SELECTORS - HORAS] Año:", selAno.value, "Mes Index:", selMes.value);
+}
+
+function populateTechnicianSelector_Horas() {
+    const selector = $('#adminSelTec');
+    if (!selector) return;
+    console.log(`[DEBUG][POPULATE TEC SELECTOR - HORAS] SuperAdmin: ${isSuper}, Admin: ${isAdmin}. Ambulancia actual (si admin): ${amb}`);
+    
+    const currentSelectedValueInDropdown = selector.value;
+    selector.innerHTML = ''; 
+    const seenTechnicians = new Set();
+    let optionsHtml = '';
+    let defaultSelectedValue = null; 
+
+    if (isAdmin && !isSuper) {
+        const selfValue = `${amb}|${tec}`;
+        optionsHtml += `<option value="${selfValue}">Mis Turnos (${tec})</option>`;
+        seenTechnicians.add(selfValue);
+        defaultSelectedValue = selfValue;
+    }
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const keyLS = localStorage.key(i);
+        const match = keyLS.match(/^([A-Z0-9]+)_([A-Z0-9]+)_shifts$/);
+        if (match) {
+            const keyAmbId = match[1];
+            const keyTrbId = match[2];
+            const uniqueValue = `${keyAmbId}|${keyTrbId}`;
+
+            if (isSuper) {
+                if (!seenTechnicians.has(uniqueValue)) {
+                    optionsHtml += `<option value="${uniqueValue}">${keyAmbId} / ${keyTrbId}</option>`;
+                    seenTechnicians.add(uniqueValue);
+                    if (!defaultSelectedValue) defaultSelectedValue = uniqueValue;
+                }
+            } else if (isAdmin && keyAmbId === amb) { 
+                if (!seenTechnicians.has(uniqueValue)) { 
+                    optionsHtml += `<option value="${uniqueValue}">Técnico ${keyTrbId}</option>`;
+                    seenTechnicians.add(uniqueValue);
+                }
+            }
+        }
+    }
+    selector.innerHTML = optionsHtml;
+
+    if (seenTechnicians.size === 0) {
+        selector.innerHTML = `<option value="">No hay técnicos con turnos</option>`;
+        adminViewingAmb = ''; adminViewingTec = '';
+    } else {
+        if (currentSelectedValueInDropdown && seenTechnicians.has(currentSelectedValueInDropdown)) {
+            selector.value = currentSelectedValueInDropdown;
+        } else if (defaultSelectedValue) {
+            selector.value = defaultSelectedValue;
+        } else if (selector.options.length > 0) {
+             selector.value = selector.options[0].value;
+        }
+        
+        if (selector.value) {
+            const [selectedAmb, selectedTrb] = selector.value.split('|');
+            adminViewingAmb = selectedAmb;
+            adminViewingTec = selectedTrb;
+        } else {
+             adminViewingAmb = ''; adminViewingTec = '';
+        }
+    }
+    console.log(`[DEBUG][POPULATE TEC SELECTOR - HORAS] Técnico seleccionado para ver: ${adminViewingAmb}|${adminViewingTec}`);
+    
+    selector.onchange = () => {
+        if (selector.value) {
+            const [selectedAmb, selectedTrb] = selector.value.split('|');
+            adminViewingAmb = selectedAmb;
+            adminViewingTec = selectedTrb;
+        } else {
+            adminViewingAmb = ''; adminViewingTec = '';
+        }
+        console.log(`[DEBUG][TEC SELECTOR CHANGE - HORAS] Nuevo técnico a ver: ${adminViewingAmb}|${adminViewingTec}`);
+        actualizarVistaHoras();
+    };
+    actualizarVistaHoras();
+}
+
+function actualizarVistaHoras() {
+    const year = $('#selAno').value;
+    const monthIndex = $('#selMes').value;
+    if (!year || monthIndex === null || monthIndex === undefined) {
+        console.error("[DEBUG][ACTUALIZAR VISTA HORAS] Año o mes no seleccionados.");
+        return;
+    }
+    const monthKey = `${year}-${String(parseInt(monthIndex) + 1).padStart(2, '0')}`;
+    console.log(`[DEBUG][ACTUALIZAR VISTA HORAS] Para: Amb=${adminViewingAmb}, Tec=${adminViewingTec}, Mes=${monthKey}`);
+
+    const shiftsKey = `${adminViewingAmb}_${adminViewingTec}_shifts`;
+    const allShiftsData = LS(shiftsKey) || {};
+    const shiftsDelMesSeleccionado = allShiftsData[monthKey] || [];
+
+    // Cargar datos de doblajes oficiales para el resumen
+    const doblajesOficialesKey = `doblajes_oficiales_${adminViewingAmb}_${adminViewingTec}`;
+    const doblajesOficialesData = LS(doblajesOficialesKey) || [];
+    let totalMonthMinutesDobladas = 0;
+    let totalMonthKmDoblados = 0;
+    doblajesOficialesData.filter(d => d.date.startsWith(monthKey)).forEach(d => {
+        totalMonthMinutesDobladas += (parseFloat(d.hours) * 60 || 0);
+        totalMonthKmDoblados += (parseFloat(d.km) || 0);
+    });
+
+
+    let totalMonthMinutesNormales = 0;
+    let totalMonthKmNormales = 0;
+    shiftsDelMesSeleccionado.forEach(s => {
+        totalMonthMinutesNormales += dur(s.ini, s.fin, true);
+        totalMonthKmNormales += +s.km;
+    });
+
+    $('#summaryHoursNormal').textContent = formatMinutesToHoursString(totalMonthMinutesNormales);
+    $('#summaryKmNormal').textContent = `${totalMonthKmNormales.toFixed(1)} km`;
+    $('#summaryHoursDobladas').textContent = formatMinutesToHoursString(totalMonthMinutesDobladas);
+    $('#summaryKmDoblados').textContent = `${totalMonthKmDoblados.toFixed(1)} km`;
+    $('#summaryHoursTotal').textContent = formatMinutesToHoursString(totalMonthMinutesNormales + totalMonthMinutesDobladas);
+    $('#summaryKmTotal').textContent = `${(totalMonthKmNormales + totalMonthKmDoblados).toFixed(1)} km`;
+    
+    $('#shiftSummary').classList.toggle('hide', shiftsDelMesSeleccionado.length === 0 && totalMonthMinutesDobladas === 0 && (!adminViewingAmb || !adminViewingTec));
+    if ($('#summaryUser')) $('#summaryUser').textContent = (adminViewingAmb && adminViewingTec) ? `${adminViewingAmb} / ${adminViewingTec}` : 'N/A';
+
+
+    const selDiaTrabajado = $('#selDiaTrabajado');
+    const workedDaysSelectorContainer = $('#workedDaysSelectorContainer');
+    const currentSelectedDay = selDiaTrabajado.value;
+    selDiaTrabajado.innerHTML = '<option value="">-- Seleccione día --</option>';
+    const workedDaysMap = new Map();
+
+    shiftsDelMesSeleccionado.sort((a,b) => new Date(a.ini) - new Date(b.ini)).forEach(s => {
+        const dateObj = new Date(s.ini);
+        const dayFormatted = fmt(dateObj, { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const valueDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+        if (!workedDaysMap.has(valueDate)) {
+            workedDaysMap.set(valueDate, dayFormatted);
+        }
+    });
+     // Añadir días doblados al selector si no están ya por turnos normales
+    doblajesOficialesData.filter(d => d.date.startsWith(monthKey)).forEach(doblaje => {
+        const dateObj = new Date(doblaje.date.replace(/-/g, '/')); // Asegurar formato correcto para Date
+        const dayFormatted = fmt(dateObj, { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const valueDate = doblaje.date; // Ya está en YYYY-MM-DD
+        if (!workedDaysMap.has(valueDate)) {
+            workedDaysMap.set(valueDate, dayFormatted + " (Solo Doblaje)");
+        }
+    });
+    // Ordenar el Map por fecha antes de añadir al selector
+    const sortedWorkedDays = new Map([...workedDaysMap.entries()].sort((a,b) => new Date(a[0]) - new Date(b[0])));
+
+
+    sortedWorkedDays.forEach((display, value) => {
+        selDiaTrabajado.add(new Option(display, value));
+    });
+    
+    workedDaysSelectorContainer.classList.toggle('hide', sortedWorkedDays.size === 0);
+    selDiaTrabajado.onchange = mostrarDetalleDiaSeleccionado;
+
+    if (sortedWorkedDays.has(currentSelectedDay)) {
+        selDiaTrabajado.value = currentSelectedDay;
+    } else if (sortedWorkedDays.size > 0) {
+        selDiaTrabajado.value = sortedWorkedDays.keys().next().value;
+    }
+    mostrarDetalleDiaSeleccionado();
+}
+
+function mostrarDetalleDiaSeleccionado() {
+    const selDiaTrabajado = $('#selDiaTrabajado');
+    const selectedDateValue = selDiaTrabajado.value;
+    const dailyDetailsEl = $('#dailyShiftDetails');
+    const dailyDetailsContainerEl = $('#dailyShiftDetailsContainer');
+
+    console.log(`[DEBUG][MOSTRAR DETALLE DIA] Día seleccionado: ${selectedDateValue}`);
+
+    if (!selectedDateValue || !adminViewingAmb || !adminViewingTec) {
+        dailyDetailsEl.innerHTML = '<p>Seleccione un técnico, mes y día para ver el detalle.</p>';
+        dailyDetailsContainerEl.classList.remove('hide');
+        return;
+    }
+
+    const year = $('#selAno').value;
+    const monthIndex = $('#selMes').value;
+    const monthKey = `${year}-${String(parseInt(monthIndex) + 1).padStart(2, '0')}`;
+    
+    const shiftsKey = `${adminViewingAmb}_${adminViewingTec}_shifts`;
+    const allShiftsData = LS(shiftsKey) || {};
+    const shiftsDelMesSeleccionado = allShiftsData[monthKey] || [];
+
+    let dailyMinutesNormal = 0;
+    let dailyKmNormal = 0;
+    const shiftsHoy = shiftsDelMesSeleccionado.filter(s => {
+        const shiftDate = new Date(s.ini);
+        const shiftDateValue = `${shiftDate.getFullYear()}-${String(shiftDate.getMonth() + 1).padStart(2, '0')}-${String(shiftDate.getDate()).padStart(2, '0')}`;
+        return shiftDateValue === selectedDateValue;
+    });
+
+    shiftsHoy.forEach(s => {
+        dailyMinutesNormal += dur(s.ini, s.fin, true);
+        dailyKmNormal += +s.km;
+    });
+
+    let dobladoHtml = '';
+    const doblajesOficialesKey = `doblajes_oficiales_${adminViewingAmb}_${adminViewingTec}`;
+    const doblajesOficialesData = LS(doblajesOficialesKey) || [];
+    const doblajeOficialHoy = doblajesOficialesData.find(d => d.date === selectedDateValue);
+
+    if (doblajeOficialHoy) {
+        const doblajeHours = parseFloat(doblajeOficialHoy.hours) || 0;
+        const doblajeKm = parseFloat(doblajeOficialHoy.km) || 0;
+        dobladoHtml = `<p><span class="doblado-indicator">DOBLADO (Admin)</span> Horas: ${formatMinutesToHoursString(doblajeHours * 60)}, Km: ${doblajeKm.toFixed(1)}</p>`;
+    } else if (adminViewingAmb === amb && adminViewingTec === tec) { // Solo mostrar solicitud pendiente al propio técnico
+        const doblajesSolicitudesKey = `doblajes_solicitudes_${amb}_${tec}`;
+        const doblajesSolicitudesData = LS(doblajesSolicitudesKey) || [];
+        const solicitudHoy = doblajesSolicitudesData.find(s => s.date === selectedDateValue);
+        if (solicitudHoy) {
+            const solicitudHours = parseFloat(solicitudHoy.hours) || 0;
+            const solicitudKm = parseFloat(solicitudHoy.km) || 0;
+            dobladoHtml = `<p><span class="solicitud-doblaje-indicator">SOLICITUD PENDIENTE</span> Horas: ${formatMinutesToHoursString(solicitudHours*60)}, Km: ${solicitudKm.toFixed(1)}</p>`;
+        }
+    }
+    
+    let htmlContent = `<p><strong>Día ${fmt(new Date(selectedDateValue.replace(/-/g, '/')), { weekday: 'long', day: 'numeric', month: 'long' })}:</strong></p>`;
+    if (shiftsHoy.length > 0) {
+        htmlContent += `<p>Turnos Normales: ${formatMinutesToHoursString(dailyMinutesNormal)} - ${dailyKmNormal.toFixed(1)} km</p>`;
+    } else if (!doblajeOficialHoy && !dobladoHtml.includes('SOLICITUD PENDIENTE')) { // Si no hay turnos normales NI doblaje oficial NI solicitud
+        htmlContent += `<p>No hay actividad registrada para este día.</p>`;
+    }
+    htmlContent += dobladoHtml; // Añadir info de doblaje si existe
+
+    dailyDetailsEl.innerHTML = htmlContent;
+    dailyDetailsContainerEl.classList.remove('hide');
+}
+
+
+$('#btnSaveShift').onclick=()=>{
+  const ini=$('#sIni').value,fin=$('#sFin').value,km=$('#sKm').value;
+  if(!ini||!fin||!km)return toast('Completa los campos','error');
+  if(new Date(fin)<=new Date(ini))return toast('Fin ≤ Inicio','error');
+  
+  const loggedInUserKey = `${amb}_${tec}_shifts`;
+  const data = LS(loggedInUserKey) || {};
+  const mesKey = ini.slice(0,7);
+
+  console.log(`[DEBUG][SAVE SHIFT] Guardando turno para usuario logueado: ${loggedInUserKey}, Mes: ${mesKey}`);
+  data[mesKey] = data[mesKey] || [];
+  data[mesKey].push({ini,fin,km:+km, id: Date.now()});
+  data[mesKey].sort((a,b) => new Date(a.ini) - new Date(b.ini));
+  SS(loggedInUserKey,data);
+  
+  $('#shiftForm').reset();
+  const currentViewingMonthKey = `${$('#selAno').value}-${String(parseInt($('#selMes').value) + 1).padStart(2, '0')}`;
+  if (adminViewingAmb === amb && adminViewingTec === tec && mesKey === currentViewingMonthKey) {
+      actualizarVistaHoras();
+  } else if (isAdmin || isSuper) {
+      if (mesKey === currentViewingMonthKey && adminViewingAmb === amb && adminViewingTec === tec) {
+          actualizarVistaHoras();
+      }
+  }
+  updateDashboard();
+  toast('Turno guardado','success');
+};
+
+$('#btnExportMonth').onclick=()=>{
+  if (!adminViewingAmb || !adminViewingTec) return toast('Seleccione un técnico para exportar sus turnos.', 'error');
+  
+  const year = $('#selAno').value;
+  const monthIndex = $('#selMes').value;
+  const currentMonthKey = `${year}-${String(parseInt(monthIndex) + 1).padStart(2, '0')}`;
+
+  if(!currentMonthKey)return toast('Selecciona un mes para exportar', 'error');
+  
+  const shiftsKey = `${adminViewingAmb}_${adminViewingTec}_shifts`;
+  const allShiftsData = LS(shiftsKey) || {};
+  const monthShiftsToExport = allShiftsData[currentMonthKey] || [];
+
+  // Añadir doblajes oficiales del mes a la exportación
+  const doblajesOficialesKey = `doblajes_oficiales_${adminViewingAmb}_${adminViewingTec}`;
+  const doblajesOficialesData = LS(doblajesOficialesKey) || [];
+  const doblajesDelMes = doblajesOficialesData.filter(d => d.date.startsWith(currentMonthKey));
+
+  if(monthShiftsToExport.length === 0 && doblajesDelMes.length === 0) return toast(`No hay datos de turnos ni doblajes para ${adminViewingAmb}/${adminViewingTec} en ${MONTH_NAMES_FULL[monthIndex]} ${year}`, 'error');
+
+  const rows=[['Tipo','ID/Fecha','Inicio/Horas','Fin/Km','Duración (H:M)','Km'].join(';')];
+  monthShiftsToExport.forEach(s => {
+      rows.push(['TURNO NORMAL',s.id || '-',fmt(s.ini),fmt(s.fin),dur(s.ini,s.fin),s.km].join(';'));
+  });
+  doblajesDelMes.forEach(d => {
+      rows.push(['DOBLAJE OFICIAL', d.date, `${d.hours}h`, `${d.km}km`, formatMinutesToHoursString(d.hours*60), d.km].join(';'));
+  });
+
+  csv(rows,`turnos_y_doblajes_${adminViewingAmb}_${adminViewingTec}_${currentMonthKey}.csv`);
+  toast(`Datos de ${adminViewingAmb}/${adminViewingTec} del mes ${MONTH_NAMES_FULL[monthIndex]} ${year} exportados`, 'success');
+};
+
+$('#btnInformarDoblaje').onclick = () => {
+    const dateValue = $('#informarDoblajeDate').value;
+    const hoursValue = parseFloat($('#informarDoblajeHours').value);
+    const kmValue = parseFloat($('#informarDoblajeKm').value);
+
+    if (!dateValue) return toast('Seleccione la fecha del doblaje.', 'error');
+    if (isNaN(hoursValue) || hoursValue <= 0) return toast('Ingrese horas válidas para el doblaje.', 'error');
+    if (isNaN(kmValue) || kmValue < 0) return toast('Ingrese kilómetros válidos para el doblaje.', 'error');
+
+    const solicitudesKey = `doblajes_solicitudes_${amb}_${tec}`;
+    let solicitudesData = LS(solicitudesKey) || [];
+
+    // Evitar duplicados por fecha
+    if (!solicitudesData.find(s => s.date === dateValue)) {
+        solicitudesData.push({ date: dateValue, hours: hoursValue, km: kmValue, status: 'pendiente' });
+        solicitudesData.sort((a,b) => new Date(a.date) - new Date(b.date));
+        SS(solicitudesKey, solicitudesData);
+        toast(`Solicitud de doblaje para el ${fmt(new Date(dateValue.replace(/-/g, '/')), {day:'2-digit', month:'2-digit', year:'numeric'})} enviada.`, 'success');
+        $('#informarDoblajeDate').value = ''; 
+        $('#informarDoblajeHours').value = '';
+        $('#informarDoblajeKm').value = '';
+        
+        const currentViewingMonthKey = `${$('#selAno').value}-${String(parseInt($('#selMes').value) + 1).padStart(2, '0')}`;
+        if (dateValue.startsWith(currentViewingMonthKey.slice(0,7))) {
+            actualizarVistaHoras();
+        }
+    } else {
+        toast(`Ya existe una solicitud pendiente para el ${fmt(new Date(dateValue.replace(/-/g, '/')), {day:'2-digit', month:'2-digit', year:'numeric'})}.`, 'info');
+    }
+};
+
+
+/* ----------------------- SALARIO ---------------------------------- */
+function toggleCalcBox(){const sel=document.querySelector('input[name="tipoSal"]:checked')?.value;
+ $('#boxAut').classList.toggle('hide',sel!=='aut');$('#boxTrab').classList.toggle('hide',sel!=='trab');
+ $('#salaryResult').classList.add('hide');}
+$$('input[name="tipoSal"]').forEach(r=>r.addEventListener('change',toggleCalcBox));
+toggleCalcBox();
+
+function precargarTrabajador(){
+  $('#limTrab').value=systemParams.hoursLimit;
+  $('#rateNormTrab').value=systemParams.rateNormal.toFixed(2);
+  $('#rateExtraTrab').value=systemParams.rateExtra.toFixed(2);
+  $('#irpfTrab').value=systemParams.irpfBase;}
+
+$('#btnCalcAut').onclick=()=>{
+  const h=parseFloat($('#hoursAut').value.replace(',','.'));
+  if(isNaN(h)||h<0)return toast('Horas inválidas','error');
+  const{hoursLimit:lim,rateNormal:rn,rateExtra:re,irpfBase:irpf}=systemParams;
+  const n=Math.min(h,lim),x=Math.max(0,h-lim),br=n*rn+x*re,net=br-irpf;
+  $('#salaryResult').innerHTML=`<p><strong>Autónomo</strong></p>
+  <p>Normales: ${n.toFixed(1)} h · Extras: ${x.toFixed(1)} h</p>
+  <p>Bruto → ${br.toFixed(2)} € · Neto → ${net.toFixed(2)} €</p>`;
+  $('#salaryResult').classList.remove('hide');};
+
+$('#btnCalcTrab').onclick=()=>{
+  const v=['hoursTrab','limTrab','rateNormTrab','rateExtraTrab','irpfTrab']
+          .map(id=>parseFloat($('#'+id).value.replace(',','.')));
+  if(v.some(x=>isNaN(x)||x<0))return toast('Datos inválidos','error');
+  const[h,lim,rn,re,irpf]=v,n=Math.min(h,lim),x=Math.max(0,h-lim),br=n*rn+x*re,net=br-irpf;
+  $('#salaryResult').innerHTML=`<p><strong>Trabajador</strong></p>
+  <p>Normales: ${n.toFixed(1)} h · Extras: ${x.toFixed(1)} h</p>
+  <p>Bruto → ${br.toFixed(2)} € · Neto → ${net.toFixed(2)} €</p>`;
+  $('#salaryResult').classList.remove('hide');};
+
+/* --------------------- PARÁMETROS --------------------------------- */
+function loadParams(){
+  const p=LS('autoParams');
+  if(p) {
+    Object.assign(systemParams,p);
+    console.log("[DEBUG][LOAD PARAMS] Parámetros cargados de LS:", JSON.parse(JSON.stringify(systemParams)));
+  } else {
+    console.log("[DEBUG][LOAD PARAMS] No se encontraron parámetros en LS, usando defaults:", JSON.parse(JSON.stringify(systemParams)));
+  }
+ $('#paramRate').value=systemParams.rateNormal.toFixed(2);
+ $('#paramRateExtra').value=systemParams.rateExtra.toFixed(2);
+ $('#paramLimit').value=systemParams.hoursLimit;
+ $('#paramIRPF').value=systemParams.irpfBase;
+ precargarTrabajador();
+}
+
+$('#btnSaveParams').onclick=()=>{
+  const vals=[+$('#paramRate').value,+$('#paramRateExtra').value,+$('#paramLimit').value,+$('#paramIRPF').value];
+  if(vals.some(v=>isNaN(v)||v<0))return toast('Valores inválidos','error');
+  [systemParams.rateNormal,systemParams.rateExtra,systemParams.hoursLimit,systemParams.irpfBase]=vals;
+  SS('autoParams',systemParams);
+  console.log("[DEBUG][SAVE PARAMS] Parámetros guardados en LS:", JSON.parse(JSON.stringify(systemParams)));
+  loadParams();
+  toast('Parámetros guardados','success');
+};
+
+/* ----------------------- AVISOS ----------------------------------- */
+function renderNotices(){
+ G.notices = LS('autoNotices_v2')||[];
+ console.log("[DEBUG][RENDER NOTICES] Avisos cargados de LS ('autoNotices_v2'):", JSON.parse(JSON.stringify(G.notices)));
+ const tb=$('#noticeTable');tb.innerHTML='';
+ 
+ if(!G.notices.length){tb.innerHTML='<tr><td colspan="4" class="text-center py-4">Sin avisos</td></tr>';return;}
+
+ G.notices.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+ G.notices.forEach((x)=>{
+    const adminTagHtml = x.noticeType === 'admin' ? `<span class="admin-notice-tag">[ADMIN]</span>` : '';
+    const deleteButtonHtml = (isAdmin||isSuper) ? `<button class="btn btn-red text-xs" data-delnotice="${x.id}">🗑</button>` : '';
+    tb.insertAdjacentHTML('beforeend',`
+    <tr><td>${fmt(x.date,{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+    <td>${adminTagHtml}${x.title}</td><td>${x.content}</td>
+    <td>${x.fileName?`<a href="${x.fileData}" download="${x.fileName}" class="btn btn-blue text-xs">Descargar</a>`:''}
+        ${deleteButtonHtml}</td></tr>`);});
+}
+
+$('#btnAddNotice').onclick=async ()=>{
+  const t=$('#nTitle').value.trim(),c=$('#nContent').value.trim();
+  if(!t||!c)return toast('Título y contenido obligatorios','error');
+  
+  const fileInput=$('#nFile');
+  const file = fileInput.files[0];
+  let fileName = '';
+  let fileData = '';
+
+  if (file) {
+    fileName = file.name;
+    try {
+        fileData = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
+    } catch (error) {
+        toast('Error al procesar el archivo adjunto.', 'error');
+        return;
+    }
+  }
+
+  const noticeType = (isAdmin || isSuper) ? 'admin' : 'general';
+  const newNotice = {
+      id: Date.now(), 
+      date:new Date().toISOString(),
+      title:t,
+      content:c,
+      fileName: fileName,
+      fileData: fileData,
+      author: `${amb}/${tec}`,
+      noticeType: noticeType
+  };
+
+  let currentNotices = LS('autoNotices_v2') || [];
+  currentNotices.push(newNotice);
+  G.notices = currentNotices;
+  
+  console.log(`[DEBUG][ADD NOTICE] Publicando aviso. Tipo: ${noticeType}. Nuevo aviso:`, JSON.parse(JSON.stringify(newNotice)));
+  SS('autoNotices_v2',G.notices);
+  console.log("[DEBUG][ADD NOTICE] Avisos guardados en LS ('autoNotices_v2'):", JSON.parse(JSON.stringify(LS('autoNotices_v2'))));
+  
+  $('#noticeForm').reset();
+  fileInput.value = '';
+  renderNotices();
+  toast('Aviso publicado','success');
+};
+
+$('#noticeTable').onclick=e=>{
+  const delButton = e.target.closest('[data-delnotice]');
+  if(!delButton) return;
+
+  if(!(isAdmin||isSuper)) return toast('Sin permisos para borrar avisos.','error');
+  
+  const noticeId = parseInt(delButton.dataset.delnotice);
+  if(isNaN(noticeId)) return;
+
+  let currentNotices = LS('autoNotices_v2')||[];
+  currentNotices = currentNotices.filter(n => n.id !== noticeId);
+  G.notices = currentNotices;
+  SS('autoNotices_v2',G.notices);
+  renderNotices();
+  toast('Aviso eliminado','success');
+};
+
+/* ------------------ DASHBOARD ------------------------------------- */
+function updateDashboard(){
+  let totalMinutesNormal = 0, totalKmNormal = 0, totalShifts = 0;
+  let totalMinutesDobladas = 0, totalKmDoblados = 0, totalDoblajes = 0;
+
+  const userShiftsKey = `${amb}_${tec}_shifts`;
+  const shiftsData = LS(userShiftsKey) || {};
+  Object.values(shiftsData).flat().forEach(s => {
+    totalMinutesNormal += dur(s.ini, s.fin, true);
+    totalKmNormal += +s.km;
+    totalShifts++;
+  });
+
+  const userDoblajesKey = `doblajes_oficiales_${amb}_${tec}`;
+  const doblajesData = LS(userDoblajesKey) || [];
+  doblajesData.forEach(d => {
+    totalMinutesDobladas += (parseFloat(d.hours) * 60 || 0);
+    totalKmDoblados += (parseFloat(d.km) || 0);
+    totalDoblajes++;
+  });
+  
+  const granTotalHoras = totalMinutesNormal + totalMinutesDobladas;
+  $('#dashTotalHours').textContent = formatMinutesToHoursString(granTotalHoras);
+  $('#dashTotalKm').textContent = (totalKmNormal + totalKmDoblados).toFixed(1);
+  $('#dashTotalShifts').textContent = totalShifts;
+  $('#dashTotalDoblajes').textContent = totalDoblajes;
+  $('#dashAvgHours').textContent = totalShifts ? formatMinutesToHoursString(totalMinutesNormal / totalShifts) : '0h 0m';
+
+
+  const rec=[];
+  const userAllShifts = Object.values(shiftsData).flat();
+  rec.push(...userAllShifts);
+  
+  rec.sort((a,b)=>new Date(b.fin)-new Date(a.fin));
+  const rl=$('#recentActivity');rl.innerHTML='';
+  rec.slice(0,5).forEach(s=>{const m=(new Date(s.fin)-new Date(s.ini))/60000;
+    rl.insertAdjacentHTML('beforeend',`<div class="recent-item">
+      <span>${fmt(s.ini,{day:'2-digit',month:'short'})}</span>
+      <span>${Math.floor(m/60)}h ${m%60}m · ${s.km} km</span></div>`);});
+  if(!rec.length)rl.innerHTML='<div class="recent-item"><span>Sin actividad reciente</span></div>';
+  console.log("[DEBUG][UPDATE DASHBOARD] Dashboard actualizado para el usuario logueado:", amb, tec);
+}
+
+/* ---------------- GESTIÓN DE DOBLAJES (Nueva Sección) ------------- */
+function initDoblajes() {
+    console.log("[DEBUG][INIT DOBLAJES] Iniciando sección de doblajes.");
+    populateTechnicianSelector_Doblajes();
+    renderResumenDoblajesTodos();
+    $('#doblajesListTecnicoAdmin').innerHTML = '<p>Seleccione un técnico para ver sus días doblados.</p>';
+    $('#doblajesSolicitudesPendientes').innerHTML = '<p>Seleccione un técnico para ver sus solicitudes.</p>';
+    $('#doblajeDateAdmin').value = '';
+    $('#doblajeHoursAdmin').value = '';
+    $('#doblajeKmAdmin').value = '';
+}
+
+function populateTechnicianSelector_Doblajes() {
+    const selector = $('#doblajesSelTec');
+    if (!selector) return;
+    console.log(`[DEBUG][POPULATE TEC SELECTOR - DOBLAJES] SuperAdmin: ${isSuper}, Admin: ${isAdmin}.`);
+    
+    const currentSelectedValue = selector.value;
+    selector.innerHTML = '<option value="">-- Seleccionar Técnico --</option>';
+    const seenTechnicians = new Set();
+    let optionsHtml = '';
+    let defaultSelectedValue = null;
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const keyLS = localStorage.key(i);
+        const match = keyLS.match(/^([A-Z0-9]+)_([A-Z0-9]+)_shifts$/); 
+        if (match) {
+            const keyAmbId = match[1];
+            const keyTrbId = match[2];
+            const uniqueValue = `${keyAmbId}|${keyTrbId}`;
+
+            if (isSuper || (isAdmin && keyAmbId === amb)) {
+                if (!seenTechnicians.has(uniqueValue)) {
+                    optionsHtml += `<option value="${uniqueValue}">${isSuper ? keyAmbId + ' / ' : ''}${keyTrbId}</option>`;
+                    seenTechnicians.add(uniqueValue);
+                    if(!defaultSelectedValue && isAdmin && !isSuper && keyAmbId === amb && keyTrbId === tec) {
+                        defaultSelectedValue = uniqueValue;
+                    } else if (!defaultSelectedValue && isSuper) {
+                        defaultSelectedValue = uniqueValue;
+                    }
+                }
+            }
+        }
+    }
+    selector.innerHTML += optionsHtml;
+    if (currentSelectedValue && seenTechnicians.has(currentSelectedValue)) {
+        selector.value = currentSelectedValue;
+    } else if (defaultSelectedValue) {
+        selector.value = defaultSelectedValue;
+    }
+    
+    selector.onchange = () => {
+        const selectedValue = selector.value;
+        if (selectedValue) {
+            const [selectedAmb, selectedTrb] = selectedValue.split('|');
+            renderDoblajesTecnicoSeleccionadoAdmin(selectedAmb, selectedTrb);
+            renderSolicitudesPendientesAdmin(selectedAmb, selectedTrb);
+        } else {
+            $('#doblajesListTecnicoAdmin').innerHTML = '<p>Seleccione un técnico.</p>';
+            $('#doblajesSolicitudesPendientes').innerHTML = '<p>Seleccione un técnico.</p>';
+        }
+         $('#doblajeDateAdmin').value = '';
+         $('#doblajeHoursAdmin').value = '';
+         $('#doblajeKmAdmin').value = '';
+    };
+    if(selector.value) selector.onchange();
+}
+
+function getDoblajesOficialesKey(targetAmb, targetTec) { return `doblajes_oficiales_${targetAmb}_${targetTec}`; }
+function getDoblajesSolicitudesKey(targetAmb, targetTec) { return `doblajes_solicitudes_${targetAmb}_${targetTec}`; }
+
+$('#btnToggleDoblajeAdmin').onclick = () => { // Ahora es "Guardar/Actualizar"
+    const selectedTechValue = $('#doblajesSelTec').value;
+    const dateValue = $('#doblajeDateAdmin').value;
+    const hoursValue = parseFloat($('#doblajeHoursAdmin').value);
+    const kmValue = parseFloat($('#doblajeKmAdmin').value);
+
+    if (!selectedTechValue) return toast('Seleccione un técnico.', 'error');
+    if (!dateValue) return toast('Seleccione una fecha.', 'error');
+    if (isNaN(hoursValue) || hoursValue <= 0) return toast('Ingrese horas válidas para el doblaje.', 'error');
+    if (isNaN(kmValue) || kmValue < 0) return toast('Ingrese kilómetros válidos para el doblaje.', 'error');
+
+    const [targetAmb, targetTec] = selectedTechValue.split('|');
+    const doblajesKey = getDoblajesOficialesKey(targetAmb, targetTec);
+    let doblajesData = LS(doblajesKey) || [];
+    
+    const existingDoblajeIndex = doblajesData.findIndex(d => d.date === dateValue);
+
+    if (existingDoblajeIndex > -1) { // Actualizar existente
+        doblajesData[existingDoblajeIndex] = { date: dateValue, hours: hoursValue, km: kmValue };
+        toast(`Día doblado ${fmt(new Date(dateValue.replace(/-/g, '/')), {day:'2-digit', month:'2-digit', year:'numeric'})} ACTUALIZADO para ${targetTec}.`, 'success');
+    } else { // Añadir nuevo
+        doblajesData.push({ date: dateValue, hours: hoursValue, km: kmValue });
+        toast(`Día doblado ${fmt(new Date(dateValue.replace(/-/g, '/')), {day:'2-digit', month:'2-digit', year:'numeric'})} GUARDADO para ${targetTec}.`, 'success');
+    }
+    doblajesData.sort((a,b) => new Date(a.date) - new Date(b.date));
+    SS(doblajesKey, doblajesData);
+
+    // Si se guarda/actualiza oficialmente, eliminar de solicitudes pendientes si existía
+    const solicitudesKey = getDoblajesSolicitudesKey(targetAmb, targetTec);
+    let solicitudesData = LS(solicitudesKey) || [];
+    if (solicitudesData.some(s => s.date === dateValue)) {
+        solicitudesData = solicitudesData.filter(s => s.date !== dateValue);
+        SS(solicitudesKey, solicitudesData);
+    }
+    
+    renderDoblajesTecnicoSeleccionadoAdmin(targetAmb, targetTec);
+    renderSolicitudesPendientesAdmin(targetAmb, targetTec);
+    renderResumenDoblajesTodos();
+    $('#doblajeDateAdmin').value = ''; $('#doblajeHoursAdmin').value = ''; $('#doblajeKmAdmin').value = '';
+};
+
+$('#btnRemoveDoblajeAdmin').onclick = () => {
+    const selectedTechValue = $('#doblajesSelTec').value;
+    const dateValue = $('#doblajeDateAdmin').value;
+
+    if (!selectedTechValue) return toast('Seleccione un técnico.', 'error');
+    if (!dateValue) return toast('Seleccione una fecha para quitar la marca de doblado.', 'error');
+
+    const [targetAmb, targetTec] = selectedTechValue.split('|');
+    const doblajesKey = getDoblajesOficialesKey(targetAmb, targetTec);
+    let doblajesData = LS(doblajesKey) || [];
+
+    if (doblajesData.some(d => d.date === dateValue)) {
+        doblajesData = doblajesData.filter(d => d.date !== dateValue);
+        SS(doblajesKey, doblajesData);
+        toast(`Marca de doblado para el día ${fmt(new Date(dateValue.replace(/-/g, '/')), {day:'2-digit', month:'2-digit', year:'numeric'})} eliminada para ${targetTec}.`, 'success');
+        renderDoblajesTecnicoSeleccionadoAdmin(targetAmb, targetTec);
+        renderResumenDoblajesTodos();
+        $('#doblajeDateAdmin').value = ''; $('#doblajeHoursAdmin').value = ''; $('#doblajeKmAdmin').value = '';
+    } else {
+        toast(`El día ${fmt(new Date(dateValue.replace(/-/g, '/')), {day:'2-digit', month:'2-digit', year:'numeric'})} no estaba marcado como doblado oficialmente.`, 'info');
+    }
+};
+
+
+function renderDoblajesTecnicoSeleccionadoAdmin(targetAmb, targetTec) {
+    const listEl = $('#doblajesListTecnicoAdmin');
+    const doblajesKey = getDoblajesOficialesKey(targetAmb, targetTec);
+    const doblajesData = LS(doblajesKey) || [];
+    console.log(`[DEBUG][RENDER DOBLAJES OFICIALES TECNICO] Para ${targetAmb}/${targetTec}, datos:`, doblajesData);
+
+    listEl.innerHTML = '';
+    if (doblajesData.length === 0) {
+        listEl.innerHTML = `<p>No hay días doblados oficialmente para ${targetTec}.</p>`;
+        return;
+    }
+    doblajesData.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(d => {
+        listEl.insertAdjacentHTML('beforeend', 
+            `<div class="list-item">${fmt(new Date(d.date.replace(/-/g, '/')), {year: 'numeric', month: 'long', day: 'numeric' })} 
+            - ${d.hours}h, ${d.km}km</div>`);
+    });
+}
+
+function renderSolicitudesPendientesAdmin(targetAmb, targetTec) {
+    const listEl = $('#doblajesSolicitudesPendientes');
+    const solicitudesKey = getDoblajesSolicitudesKey(targetAmb, targetTec);
+    const solicitudesData = LS(solicitudesKey) || [];
+    console.log(`[DEBUG][RENDER SOLICITUDES PENDIENTES] Para ${targetAmb}/${targetTec}, datos:`, solicitudesData);
+
+    listEl.innerHTML = '';
+    if (solicitudesData.length === 0) {
+        listEl.innerHTML = `<p>No hay solicitudes de doblaje pendientes para ${targetTec}.</p>`;
+        return;
+    }
+    solicitudesData.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(s => {
+        listEl.insertAdjacentHTML('beforeend', `
+            <div class="list-item pending-request-item flex justify-between items-center">
+                <span>${fmt(new Date(s.date.replace(/-/g, '/')), {year: 'numeric', month: 'long', day: 'numeric' })} 
+                (${s.hours}h, ${s.km}km)</span>
+                <div class="space-x-2">
+                    <button class="btn btn-green btn-xs" data-approve-doblaje="${targetAmb}|${targetTec}|${s.date}|${s.hours}|${s.km}">Aprobar</button>
+                    <button class="btn btn-red btn-xs" data-reject-doblaje="${targetAmb}|${targetTec}|${s.date}">Rechazar</button>
+                </div>
+            </div>
+        `);
+    });
+}
+
+$('#doblajesSolicitudesPendientes').onclick = e => {
+    const approveBtn = e.target.closest('[data-approve-doblaje]');
+    const rejectBtn = e.target.closest('[data-reject-doblaje]');
+
+    if (approveBtn) {
+        const [targetAmb, targetTec, dateValue, hoursValue, kmValue] = approveBtn.dataset.approveDoblaje.split('|');
+        
+        const doblajesOficialesKey = getDoblajesOficialesKey(targetAmb, targetTec);
+        let doblajesOficialesData = LS(doblajesOficialesKey) || [];
+        const existingDoblajeIndex = doblajesOficialesData.findIndex(d => d.date === dateValue);
+        if (existingDoblajeIndex > -1) { // Actualizar si ya existe (poco probable si viene de solicitud)
+            doblajesOficialesData[existingDoblajeIndex] = { date: dateValue, hours: parseFloat(hoursValue), km: parseFloat(kmValue) };
+        } else {
+            doblajesOficialesData.push({ date: dateValue, hours: parseFloat(hoursValue), km: parseFloat(kmValue) });
+        }
+        doblajesOficialesData.sort((a,b) => new Date(a.date) - new Date(b.date));
+        SS(doblajesOficialesKey, doblajesOficialesData);
+        
+        const solicitudesKey = getDoblajesSolicitudesKey(targetAmb, targetTec);
+        let solicitudesData = LS(solicitudesKey) || [];
+        solicitudesData = solicitudesData.filter(s => s.date !== dateValue);
+        SS(solicitudesKey, solicitudesData);
+        
+        toast(`Solicitud para ${dateValue} aprobada y marcada como doblado para ${targetTec}.`, 'success');
+        renderDoblajesTecnicoSeleccionadoAdmin(targetAmb, targetTec);
+        renderSolicitudesPendientesAdmin(targetAmb, targetTec);
+        renderResumenDoblajesTodos();
+    } else if (rejectBtn) {
+        const [targetAmb, targetTec, dateValue] = rejectBtn.dataset.rejectDoblaje.split('|');
+        const solicitudesKey = getDoblajesSolicitudesKey(targetAmb, targetTec);
+        let solicitudesData = LS(solicitudesKey) || [];
+        solicitudesData = solicitudesData.filter(s => s.date !== dateValue);
+        SS(solicitudesKey, solicitudesData);
+
+        toast(`Solicitud para ${dateValue} rechazada para ${targetTec}.`, 'info');
+        renderSolicitudesPendientesAdmin(targetAmb, targetTec);
+    }
+};
+
+
+function renderResumenDoblajesTodos() {
+    const tbody = $('#doblajesResumenTodos');
+    tbody.innerHTML = '';
+    let foundAnyDoblajes = false;
+    const techDoblajesSummary = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const keyLS = localStorage.key(i);
+        const matchDoblajes = keyLS.match(/^doblajes_oficiales_([A-Z0-9]+)_([A-Z0-9]+)$/);
+        if (matchDoblajes) {
+            const keyAmbId = matchDoblajes[1];
+            const keyTrbId = matchDoblajes[2];
+            const doblajesData = LS(keyLS) || [];
+            if (isSuper || (isAdmin && keyAmbId === amb)) {
+                let totalHours = 0, totalKm = 0;
+                doblajesData.forEach(d => {
+                    totalHours += parseFloat(d.hours) || 0;
+                    totalKm += parseFloat(d.km) || 0;
+                });
+                techDoblajesSummary.push({amb: keyAmbId, tec: keyTrbId, count: doblajesData.length, totalHours, totalKm});
+                if (doblajesData.length > 0) foundAnyDoblajes = true;
+            }
+        }
+    }
+    techDoblajesSummary.sort((a,b) => b.count - a.count || b.totalHours - a.totalHours);
+
+    if (!foundAnyDoblajes) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3">No hay días doblados registrados.</td></tr>';
+    } else {
+        techDoblajesSummary.forEach(data => {
+             tbody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${data.tec}</td>
+                    <td>${data.amb}</td>
+                    <td>${data.count}</td>
+                    <td>${data.totalHours.toFixed(1)}h</td>
+                    <td>${data.totalKm.toFixed(1)}km</td>
+                </tr>
+            `);
+        });
+    }
+    console.log("[DEBUG][RENDER RESUMEN DOBLAJES] Resumen de todos los técnicos actualizado.");
+}
+
+
+/* ---------------- ADMIN PANEL ------------------------------------- */
+let modalDataToExport = { amb: '', tec: '', monthKey: '', shifts: [] };
+
+function updateAdminPanel(){
+  const log=LS('access_log')||[],al=$('#accessLog');al.innerHTML='';
+  log.slice().reverse().slice(0, 50).forEach(l=>al.insertAdjacentHTML('beforeend',`
+   <tr><td>${fmt(l.date,{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+   <td>${l.amb}</td><td>${l.tec}</td><td>Login ${l.superAdmin ? '(Super)' : l.admin ? '(Admin)' : ''}</td></tr>`));
+
+  const re=/^([A-Z0-9]+)_([A-Z0-9]+)_shifts$/;const tb=$('#techSummary');tb.innerHTML='';
+  const techDataForChart = [];
+  const techDataForTable = [];
+
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i),m=k.match(re);if(!m)continue;
+    const[keyAmb,keyTec]=m.slice(1,3); // Usar keyAmb, keyTec para evitar conflicto con amb, tec globales
+    if(!isSuper && isAdmin && keyAmb!==amb) continue; 
+    
+    const allShiftsForTech = Object.values(LS(k)||{}).flat();
+    let minNormal=0,kmNormal=0;
+    allShiftsForTech.forEach(s=>{minNormal+=(new Date(s.fin)-new Date(s.ini))/60000;kmNormal+=+s.km;});
+
+    const doblajesKey = `doblajes_oficiales_${keyAmb}_${keyTec}`;
+    const doblajesData = LS(doblajesKey) || [];
+    let minDoblada = 0, kmDoblados = 0;
+    doblajesData.forEach(d => {
+        minDoblada += (parseFloat(d.hours) * 60 || 0);
+        kmDoblados += (parseFloat(d.km) || 0);
+    });
+    
+    techDataForTable.push({a:keyAmb, t:keyTec, minNormal, kmNormal, minDoblada, kmDoblados});
+    if (minNormal > 0 || minDoblada > 0) {
+        techDataForChart.push({ 
+            label: `${keyTec} (${keyAmb})`, 
+            hoursNormal: minNormal / 60,
+            hoursDobladas: minDoblada / 60
+        });
+    }
+  }
+  techDataForTable.sort((x,y) => (y.minNormal + y.minDoblada) - (x.minNormal + x.minDoblada));
+
+  techDataForTable.forEach(data => {
+    tb.insertAdjacentHTML('beforeend',`<tr><td>${data.t}</td><td>${data.a}</td>
+      <td>${(data.minNormal/60).toFixed(1)}h</td><td>${data.kmNormal.toFixed(1)}km</td>
+      <td>${(data.minDoblada/60).toFixed(1)}h</td><td>${data.kmDoblados.toFixed(1)}km</td>
+      <td>${((data.minNormal + data.minDoblada)/60).toFixed(1)}h</td><td>${(data.kmNormal + data.kmDoblados).toFixed(1)}km</td>
+      <td><button class="btn btn-amber text-xs" data-view="${data.a}|${data.t}">Ver Meses</button></td></tr>`);
+  });
+  
+  renderTechHoursChart(techDataForChart);
+  console.log("[DEBUG][UPDATE ADMIN PANEL] Panel de admin actualizado, datos para gráfico:", techDataForChart);
+}
+
+function renderTechHoursChart(techData) {
+    const ctx = $('#techHoursChart')?.getContext('2d');
+    if (!ctx) {
+        console.error("[DEBUG] Elemento canvas para el gráfico no encontrado.");
+        return;
+    }
+
+    const labels = techData.map(d => d.label);
+    const hoursNormalData = techData.map(d => d.hoursNormal);
+    const hoursDobladasData = techData.map(d => d.hoursDobladas);
+
+
+    if (techHoursChartInstance) {
+        techHoursChartInstance.destroy();
+    }
+
+    techHoursChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Horas Normales Totales',
+                    data: hoursNormalData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)', // Azul
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Horas Dobladas Totales',
+                    data: hoursDobladasData,
+                    backgroundColor: 'rgba(255, 159, 64, 0.6)', // Naranja
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Horas' }, stacked: true }, // Apiladas
+                x: { title: { display: true, text: 'Técnico (Ambulancia)'}, stacked: true } // Apiladas
+            },
+            plugins: {
+                legend: { display: true, position: 'top' },
+                title: { display: true, text: 'Horas Totales por Técnico (Normales vs Dobladas)', font: {size: 16}}
+            }
+        }
+    });
+    console.log("[DEBUG][RENDER CHART] Gráfico de horas de técnicos renderizado/actualizado.");
+}
+
+
+$('#techSummary').onclick=e=>{
+  const ref=e.target.closest('[data-view]')?.dataset.view;if(!ref)return;
+  const[a,t]=ref.split('|');
+  currentModalAmb = a; currentModalTec = t;
+  $('#modalTitle').textContent=`Turnos de ${t} (${a})`;
+  populateModalYearMonthSelectors(a, t);
+  $('#userShiftModal').classList.remove('hide');
+};
+
+function populateModalYearMonthSelectors(targetAmb, targetTec) {
+    const selAno = $('#modalSelAno');
+    const selMes = $('#modalSelMes');
+    const shiftsKey = `${targetAmb}_${targetTec}_shifts`;
+    const allShiftsData = LS(shiftsKey) || {};
+    const yearsWithData = new Set();
+    Object.keys(allShiftsData).forEach(monthKey => yearsWithData.add(monthKey.slice(0,4)));
+
+    selAno.innerHTML = '';
+    if (yearsWithData.size > 0) {
+        Array.from(yearsWithData).sort((a,b) => b-a).forEach(year => selAno.add(new Option(year, year)));
+        selAno.value = selAno.options[0].value;
+    } else {
+        selAno.add(new Option(new Date().getFullYear(), new Date().getFullYear()));
+    }
+
+    selMes.innerHTML = '';
+    MONTH_NAMES_FULL.forEach((name, index) => selMes.add(new Option(name, index)));
+    selMes.value = new Date().getMonth();
+
+    selAno.onchange = () => renderModalShiftDetails(targetAmb, targetTec);
+    selMes.onchange = () => renderModalShiftDetails(targetAmb, targetTec);
+    renderModalShiftDetails(targetAmb, targetTec);
+}
+
+function renderModalShiftDetails(targetAmb, targetTec) {
+    const year = $('#modalSelAno').value;
+    const monthIndex = $('#modalSelMes').value;
+    const monthKey = `${year}-${String(parseInt(monthIndex) + 1).padStart(2, '0')}`;
+    
+    const shiftsKey = `${targetAmb}_${targetTec}_shifts`;
+    const allShiftsData = LS(shiftsKey) || {};
+    const monthShifts = allShiftsData[monthKey] || [];
+    
+    // Incluir doblajes en el modal
+    const doblajesOficialesKey = `doblajes_oficiales_${targetAmb}_${targetTec}`;
+    const doblajesData = LS(doblajesOficialesKey) || [];
+    const doblajesDelMes = doblajesData.filter(d => d.date.startsWith(monthKey));
+
+    modalDataToExport = { amb: targetAmb, tec: targetTec, monthKey: monthKey, shifts: monthShifts, doblajes: doblajesDelMes };
+
+
+    const tb=$('#modalShiftTable');tb.innerHTML='';
+    let totalMinNormal = 0, totalKmNormal = 0;
+    let totalMinDoblado = 0, totalKmDoblado = 0;
+
+    if (monthShifts.length === 0 && doblajesDelMes.length === 0) {
+        tb.innerHTML = `<tr><td colspan="4" class="text-center py-3">No hay turnos ni doblajes para ${MONTH_NAMES_FULL[monthIndex]} ${year}.</td></tr>`;
+    } else {
+        monthShifts.sort((a,b) => new Date(a.ini) - new Date(b.ini)).forEach(s=>{
+            const m=(new Date(s.fin)-new Date(s.ini))/60000;totalMinNormal+=m;totalKmNormal+=+s.km;
+            tb.insertAdjacentHTML('beforeend',`
+            <tr><td>${fmt(s.ini,{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+            <td>${fmt(s.fin,{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td><td>${s.km}</td>
+            <td>${Math.floor(m/60)}h ${m%60}m</td></tr>`);
+        });
+        doblajesDelMes.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(d => {
+            const m = (parseFloat(d.hours) * 60 || 0); totalMinDoblado += m; totalKmDoblado += (parseFloat(d.km) || 0);
+             tb.insertAdjacentHTML('beforeend',`
+            <tr class="bg-amber-50"><td colspan="2">${fmt(new Date(d.date.replace(/-/g, '/')), {day:'2-digit',month:'2-digit',year:'numeric'})} (DOBLAJE)</td><td>${d.km}</td>
+            <td>${formatMinutesToHoursString(m)}</td></tr>`);
+        });
+    }
+    const granTotalMin = totalMinNormal + totalMinDoblado;
+    const granTotalKm = totalKmNormal + totalKmDoblado;
+    $('#modalSumHours').textContent=`${formatMinutesToHoursString(granTotalMin)}`;
+    $('#modalSumKm').textContent=`${granTotalKm.toFixed(1)} km`;
+}
+
+
+$('#closeModal,#closeModalBtn').onclick=()=>$('#userShiftModal').classList.add('hide');
+$('#btnExportModalShifts').onclick=()=>{
+  if (!modalDataToExport.shifts.length && !modalDataToExport.doblajes.length) return toast('No hay datos para exportar en el mes seleccionado.', 'error');
+  const { amb: expAmb, tec: expTec, monthKey: expMonthKey, shifts: expShifts, doblajes: expDoblajes } = modalDataToExport;
+  
+  const rows=[['Tipo','ID/Fecha','Inicio/Horas','Fin/Km','Duración (H:M)','Km'].join(';')];
+  expShifts.forEach(s => {
+      rows.push(['TURNO NORMAL',s.id || '-',fmt(s.ini),fmt(s.fin),dur(s.ini,s.fin),s.km].join(';'));
+  });
+  expDoblajes.forEach(d => {
+      rows.push(['DOBLAJE OFICIAL', d.date, `${d.hours}h`, `${d.km}km`, formatMinutesToHoursString(d.hours*60), d.km].join(';'));
+  });
+
+  csv(rows,`turnos_y_doblajes_${expAmb}_${expTec}_${expMonthKey}.csv`);
+  toast(`Datos de ${expAmb}/${expTec} del mes ${expMonthKey} exportados`, 'success');
+};
+
+
+/* ICONOS e INICIO -------------------------------------------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+    const lAmbInput = $('#lAmb');
+    const lTecInput = $('#lTec');
+    if (lAmbInput) lAmbInput.placeholder = `AMB01 o ${SUPER_ADMIN_AMB_ID} (Super)`;
+    if (lTecInput) lTecInput.placeholder = `TEC001 (Admin: ${ADMIN_WORKER_ID}) o ${SUPER_ADMIN_TRB_ID} (Super)`;
+    safeIcons();
+});
+</script>
+</body>
+</html>
+
+
