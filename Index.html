@@ -129,6 +129,30 @@ input:focus,select:focus,textarea:focus{border-color:#3b82f6;outline:none;box-sh
 }
 </style>
 </head>
+    <h2>Asistente IA con voz</h2>
+<input id="textoIA" type="text" placeholder="Escribe tu mensaje..." />
+<button onclick="hablarIA()">Hablar</button>
+<audio id="audioIA" controls></audio>
+
+<div class="seccion">
+  <h3>Asistente Virtual Autoamtax</h3>
+<script>
+  async function hablarIA() {
+    const texto = document.getElementById("textoIA").value;
+    const respuesta = await fetch("https://autumn-wildflower-186a.juan31an.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: texto })
+    });
+    const blob = await respuesta.blob();
+    const urlAudio = URL.createObjectURL(blob);
+    const audio = document.getElementById("audioIA");
+    audio.src = urlAudio;
+    audio.play();
+  }
+</script>
+</div>
+    
 <body>
 <div id="toast-container"></div>
 
